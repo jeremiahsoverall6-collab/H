@@ -1,47 +1,16 @@
 
-name: Build Among Us Mobile APK
-
-on:
-  workflow_dispatch:
-  push:
-    branches: [main]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - uses: android-actions/setup-android@v3
-
-      - uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.9'
-
-      - name: Extract project
-        run: |
-          unzip project-source.zip -d project
-
-      - name: Build APK
-        run: |
-          cd project
-          gradle assembleDebug
-
       - name: Package APK and source
         run: |
-          mkdir output
+          mkdir -p output
           cp project/app/build/outputs/apk/debug/app-debug.apk output/AmongUsMobileOverlay.apk
           cp project-source.zip output/
           cd output
-          zip -r ../AmongUsMobile_APK.zip .
+          zip -r AmongUsMobile_APK.zip AmongUsMobileOverlay.apk project-source.zip
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
           name: AmongUsMobile-APK
-          path: AmongUsMobile_APK.zip
+          path: output/AmongUsMobile_APK.zip
+          if-no-files-found: error
           

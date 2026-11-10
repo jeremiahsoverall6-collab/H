@@ -1,5 +1,5 @@
 
-name: Build Among Us Mobile APK
+name: Build Among Us APK
 
 on:
   workflow_dispatch:
@@ -17,46 +17,29 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      
-      - name: Install Android SDK
-        shell: bash
-        run: |
-          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
-          SDKMANAGER=$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager | head -n 1)
-
-          if [ -z "$SDKMANAGER" ]; then
-            echo "sdkmanager not found"
-            exit 1
-          fi
-
-          set +o pipefail
-          yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" --licenses
-          set -o pipefail
-
-          "$SDKMANAGER" --sdk_root="$SDK_ROOT" \
-            "platforms;android-35" \
-            "build-tools;35.0.0"
-            
-
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: Extract source
+      - name: Extract corrected project
         run: |
           mkdir project
-          unzip -q AmongUsMobileOverlay_APK_and_Source.zip -d project
+          unzip -q AmongUsMobileOverlay_FIXED_Source.zip -d project
+
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
       - name: Build APK
         run: |
-          cd project
-          gradle assembleDebug
+          gradle -p project --no-daemon assembleDebug
 
       - name: Package APK and source
         run: |
           mkdir -p output
           cp project/app/build/outputs/apk/debug/app-debug.apk output/AmongUsMobileOverlay.apk
-          cp AmongUsMobileOverlay_APK_and_Source.zip output/source.zip
+          cp AmongUsMobileOverlay_FIXED_Source.zip output/source.zip
           cd output
           zip -r ../AmongUsMobile_APK.zip .
 
